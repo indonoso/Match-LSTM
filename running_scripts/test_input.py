@@ -7,13 +7,11 @@ import os
 import torch
 import logging
 import spacy
-import numpy as np
-import matplotlib.pyplot as plt
-from models import *
-from dataset.squad_dataset import SquadDataset
-from dataset.preprocess_data import DocText
-from utils.load_config import init_logging, read_config
-from utils.functions import to_long_tensor, count_parameters, draw_heatmap_sea
+from machine_comprehension.models import *
+from machine_comprehension.dataset import SquadDataset
+from machine_comprehension.dataset import DocText
+from machine_comprehension.utils.load_config import init_logging, read_config
+from machine_comprehension.utils.functions import to_long_tensor, count_parameters, draw_heatmap_sea
 
 init_logging()
 logger = logging.getLogger(__name__)
@@ -38,7 +36,7 @@ def main():
     dataset_h5_path = global_config['data']['dataset_h5']
     if model_choose == 'base':
         model = BaseModel(dataset_h5_path,
-                          model_config=read_config('config/base_model.yaml'))
+                          model_config=read_config('../config/base_model.yaml'))
     elif model_choose == 'match-lstm':
         model = MatchLSTM(dataset_h5_path)
     elif model_choose == 'match-lstm+':

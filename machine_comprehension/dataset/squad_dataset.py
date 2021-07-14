@@ -11,8 +11,8 @@ import torch.utils.data
 from torch.utils.data.sampler import Sampler, SequentialSampler
 import logging
 import pandas as pd
-from dataset.preprocess_data import PreprocessData
-from utils.functions import *
+from machine_comprehension.dataset import PreprocessData
+from machine_comprehension.utils.functions import *
 
 logger = logging.getLogger(__name__)
 

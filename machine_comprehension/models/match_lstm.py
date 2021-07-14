@@ -4,8 +4,7 @@
 __author__ = 'han'
 
 import torch
-from models.layers import *
-from utils.functions import answer_search
+from machine_comprehension.utils.functions import answer_search
 
 
 class MatchLSTM(torch.nn.Module):

@@ -8,12 +8,11 @@ import torch
 import logging
 import argparse
 import torch.optim as optim
-from dataset.squad_dataset import SquadDataset
-from models import *
-from models.loss import MyNLLLoss, RLLoss
-from utils.load_config import init_logging, read_config
-from utils.eval import eval_on_model
-from utils.functions import pop_dict_keys
+from machine_comprehension.dataset import SquadDataset
+from machine_comprehension.models import *
+from machine_comprehension.models.loss import MyNLLLoss
+from machine_comprehension.utils.load_config import init_logging, read_config
+from machine_comprehension.utils.eval import eval_on_model
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ def train(config_path):
     model_choose = global_config['global']['model']
     dataset_h5_path = global_config['data']['dataset_h5']
     if model_choose == 'base':
-        model_config = read_config('config/base_model.yaml')
+        model_config = read_config('../config/base_model.yaml')
         model = BaseModel(dataset_h5_path,
                           model_config)
     elif model_choose == 'match-lstm':

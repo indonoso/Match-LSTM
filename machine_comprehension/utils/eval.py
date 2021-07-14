@@ -3,9 +3,8 @@
 
 __author__ = 'han'
 
-import torch
 import logging
-from dataset.preprocess_data import PreprocessData
+from machine_comprehension.dataset import PreprocessData
 
 logger = logging.getLogger(__name__)
 

@@ -5,8 +5,7 @@ __author__ = 'han'
 
 import torch
 import torch.nn as nn
-from models.layers import *
-from utils.functions import answer_search, multi_scale_ptr
+from machine_comprehension.utils.functions import answer_search, multi_scale_ptr
 
 
 class BaseModel(torch.nn.Module):

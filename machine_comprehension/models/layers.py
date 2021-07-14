@@ -3,13 +3,11 @@
 
 __author__ = 'han'
 
-import math
 import h5py
 import torch
 import torch.nn.functional as F
 import numpy as np
-from dataset.preprocess_data import PreprocessData
-from utils.functions import masked_softmax, compute_mask, masked_flip
+from machine_comprehension.utils.functions import masked_softmax, compute_mask, masked_flip
 
 
 class GloveEmbedding(torch.nn.Module):

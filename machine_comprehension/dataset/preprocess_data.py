@@ -3,8 +3,6 @@
 
 __author__ = 'han'
 
-import os
-import re
 import zipfile
 import spacy
 import json
@@ -12,7 +10,7 @@ import h5py
 import logging
 import numpy as np
 from functools import reduce
-from utils.functions import pad_sequences
+from machine_comprehension.utils.functions import pad_sequences
 from .doc_text import DocText, Space
 
 logger = logging.getLogger(__name__)
