@@ -7,7 +7,7 @@ import h5py
 import torch
 import torch.nn.functional as F
 import numpy as np
-from machine_comprehension.utils.functions import masked_softmax, compute_mask, masked_flip
+from ..utils.functions import masked_softmax, compute_mask, masked_flip
 
 
 class GloveEmbedding(torch.nn.Module):

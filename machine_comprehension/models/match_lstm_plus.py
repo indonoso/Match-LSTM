@@ -5,6 +5,8 @@ __author__ = 'han'
 
 import torch
 from machine_comprehension.utils.functions import answer_search
+from .layers import MyRNNBase, MatchRNN, GloveEmbedding, BoundaryPointer, CharEmbedding, CharEncoder
+import torch.nn.functional as F
 
 
 class MatchLSTMPlus(torch.nn.Module):

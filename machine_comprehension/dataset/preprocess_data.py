@@ -10,7 +10,7 @@ import h5py
 import logging
 import numpy as np
 from functools import reduce
-from machine_comprehension.utils.functions import pad_sequences
+from ..utils.functions import pad_sequences
 from .doc_text import DocText, Space
 
 logger = logging.getLogger(__name__)

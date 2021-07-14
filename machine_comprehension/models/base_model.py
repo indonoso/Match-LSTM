@@ -5,7 +5,10 @@ __author__ = 'han'
 
 import torch
 import torch.nn as nn
-from machine_comprehension.utils.functions import answer_search, multi_scale_ptr
+from ..utils.functions import answer_search, multi_scale_ptr
+from .layers import MyRNNBase, MatchRNN, GloveEmbedding, BoundaryPointer, CharEmbedding, CharEncoder, CharCNNEncoder,\
+    MyStackedRNN, SelfGated, MultiHopBdPointer, AttentionPooling
+import torch.nn.functional as F
 
 
 class BaseModel(torch.nn.Module):

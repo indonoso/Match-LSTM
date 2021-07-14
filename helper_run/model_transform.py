@@ -12,8 +12,8 @@ import argparse
 import torch
 import logging
 from collections import OrderedDict
-from models import *
-from utils.load_config import init_logging, read_config
+from machine_comprehension.models import *
+from machine_comprehension.utils.load_config import init_logging, read_config
 
 init_logging()
 logger = logging.getLogger(__name__)

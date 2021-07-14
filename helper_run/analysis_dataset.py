@@ -10,8 +10,8 @@ import seaborn as sns
 sys.path.append(os.getcwd())
 
 import logging
-from dataset.squad_dataset import SquadDataset
-from utils.load_config import init_logging, read_config
+from machine_comprehension.dataset import SquadDataset
+from machine_comprehension.utils.load_config import init_logging, read_config
 import matplotlib.pyplot as plt
 
 init_logging()

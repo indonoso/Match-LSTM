@@ -4,8 +4,9 @@
 __author__ = 'han'
 
 import torch
-from machine_comprehension.models import *
-from machine_comprehension.utils.functions import answer_search
+from .layers import GloveEmbedding, CharEncoder, CharEmbedding, MyRNNBase, MyStackedRNN, MatchRNN, BoundaryPointer, \
+    AttentionPooling
+from ..utils.functions import answer_search
 
 
 class RNet(torch.nn.Module):

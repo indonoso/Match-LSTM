@@ -4,7 +4,7 @@
 __author__ = 'han'
 
 import logging
-from machine_comprehension.dataset import PreprocessData
+from ..dataset.preprocess_data import PreprocessData
 
 logger = logging.getLogger(__name__)
 
