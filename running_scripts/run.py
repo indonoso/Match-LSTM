@@ -5,10 +5,10 @@ __author__ = 'han'
 
 import logging
 import argparse
-from test.train import train
-from test.test import test
+from running_scripts.train import train
+from running_scripts.test import test
 from machine_comprehension.utils.load_config import init_logging, read_config
-from machine_comprehension.dataset import PreprocessData
+from machine_comprehension.dataset.preprocess_data import PreprocessData
 
 init_logging()
 logger = logging.getLogger(__name__)

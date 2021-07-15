@@ -8,11 +8,12 @@ import torch
 import logging
 import spacy
 from machine_comprehension.models import *
-from machine_comprehension.dataset import SquadDataset
-from machine_comprehension.dataset import DocText
+from machine_comprehension.dataset.squad_dataset import SquadDataset
+from machine_comprehension.dataset.doc_text import DocText
 from machine_comprehension.utils.load_config import init_logging, read_config
-from machine_comprehension.utils.functions import to_long_tensor, count_parameters, draw_heatmap_sea
-
+from machine_comprehension.utils.functions import to_long_tensor, count_parameters
+from machine_comprehension.dataset.preprocess_data import PreprocessData
+from helper_run.plots import draw_heatmap_sea
 init_logging()
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ def main():
     answer = answer1[0]
 
     # preprocess
-    nlp = spacy.load('en')
+    nlp = spacy.load('en_core_web_sm')
     context_doc = DocText(nlp, context, global_config['preprocess'])
     question_doc = DocText(nlp, question, global_config['preprocess'])
     context_doc.update_em(question_doc)
