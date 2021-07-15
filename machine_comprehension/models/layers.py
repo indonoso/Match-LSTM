@@ -247,7 +247,7 @@ class MatchRNNAttention(torch.nn.Module):
         wg_g = self.linear_wg(G) \
             .squeeze(2) \
             .transpose(0, 1)  # (batch, question_len)
-        alpha = masked_softmax(wg_g, m=Hq_mask, dim=1)  # (batch, question_len)
+        alpha = torch.softmax(wg_g, dim=1)  # (batch, question_len)
         return alpha
 
 
@@ -340,7 +340,7 @@ class UniMatchRNN(torch.nn.Module):
             cur_hidden = self.hidden_cell.forward(cur_z, hidden[t])  # (batch, hidden_size), when lstm output tuple
             hidden.append(cur_hidden)
 
-        vis_para['gated'] = torch.stack(vis_gated, dim=-1)  # (batch, context_len)
+        # vis_para['gated'] = torch.stack(vis_gated, dim=-1)  # (batch, context_len)
         vis_para['alpha'] = torch.stack(vis_alpha, dim=2)  # (batch, question_len, context_len)
 
         hidden_state = list(map(lambda x: x[0], hidden)) if self.mode == 'LSTM' else hidden
@@ -399,14 +399,14 @@ class MatchRNN(torch.nn.Module):
             right_alpha = masked_flip(right_alpha_inv, Hp_mask, flip_dim=2)
             right_alpha = right_alpha.transpose(0, 1)
 
-            right_gated_inv = right_para_inv['gated']
-            right_gated_inv = right_gated_inv.transpose(0, 1)
-            right_gated = masked_flip(right_gated_inv, Hp_mask, flip_dim=2)
-            right_gated = right_gated.transpose(0, 1)
+            # right_gated_inv = right_para_inv['gated']
+            # right_gated_inv = right_gated_inv.transpose(0, 1)
+            # right_gated = masked_flip(right_gated_inv, Hp_mask, flip_dim=2)
+            # right_gated = right_gated.transpose(0, 1)
 
             right_hidden = masked_flip(right_hidden_inv, Hp_mask, flip_dim=0)
 
-            rtn_para['right'] = {'alpha': right_alpha, 'gated': right_gated}
+            rtn_para['right'] = {'alpha': right_alpha} #, 'gated': right_gated}
             rtn_hidden = torch.cat((left_hidden, right_hidden), dim=2)
 
         real_rtn_hidden = Hp_mask.transpose(0, 1).unsqueeze(2) * rtn_hidden
