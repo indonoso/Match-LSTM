@@ -60,7 +60,10 @@ class SquadDataset:
 
             # 'id2word', 'id2char', 'id2pos', 'id2ent'
             for key in f['meta_data'].keys():
-                self.meta_data[key] = np.array(f['meta_data'][key])
+                if key in ['id2word', 'id2char', 'id2pos', 'id2ent']:
+                    self.meta_data[key] = np.array([x.decode() for x in f['meta_data'][key]])
+                else:
+                    self.meta_data[key] = np.array(f['meta_data'][key])
         self._char2id = dict(zip(self.meta_data['id2char'],
                                  range(len(self.meta_data['id2char']))))
 

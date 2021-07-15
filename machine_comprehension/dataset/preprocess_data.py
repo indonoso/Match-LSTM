@@ -57,7 +57,7 @@ class PreprocessData:
         self._data = {}
         self._attr = {}
 
-        self._nlp = spacy.load('en')
+        self._nlp = spacy.load('en_core_web_sm')
         self._nlp.remove_pipe('parser')
         if not any([self._use_em_lemma, self._use_pos, self._use_ent]):
             self._nlp.remove_pipe('tagger')
@@ -179,8 +179,8 @@ class PreprocessData:
                                      "\nAnswer:" + cur_ans_text)
                         continue
 
-                    cur_ans_range_ids[(idx * 2):(idx * 2 + 2)] = [pos_s, pos_e]
-                answers_range_wid.append(cur_ans_range_ids)
+                    cur_ans_range_ids[(idx * 2):(idx * 2 + 2)] = np.array([pos_s, pos_e])
+                answers_range_wid.append(np.array(cur_ans_range_ids))
 
                 cnt += 1
                 if cnt % 100 == 0:
@@ -282,10 +282,8 @@ class PreprocessData:
         """
         logger.info("read glove from text file %s" % self._glove_path)
         with zipfile.ZipFile(self._glove_path, 'r') as zf:
-            if len(zf.namelist()) != 1:
-                raise ValueError('glove file "%s" not recognized' % self._glove_path)
 
-            glove_name = zf.namelist()[0]
+            glove_name = 'glove.6B.300d.txt'
 
             word_num = 0
             with zf.open(glove_name) as f:
@@ -336,6 +334,13 @@ class PreprocessData:
                         data = sub_grp.create_dataset(subsub_key, subsub_value.shape, dtype=cur_dtype,
                                                       **self._compress_option)
                         data[...] = subsub_value
+                elif isinstance(sub_value, np.ndarray) and isinstance(sub_value[0], np.ndarray):
+                    sub_grp = data_grp.create_group(sub_key)
+                    cur_dtype = str_dt if sub_value[0][0].dtype.type is np.str_ else sub_value[0][0].dtype
+                    for i, d in enumerate(sub_value):
+                        data = sub_grp.create_dataset(str(i), (len(d), ), dtype=cur_dtype,
+                                                **self._compress_option)
+                        data[...] = d
                 else:
                     cur_dtype = str_dt if sub_value.dtype.type is np.str_ else sub_value.dtype
                     data = data_grp.create_dataset(sub_key, sub_value.shape, dtype=cur_dtype,
@@ -410,7 +415,7 @@ def dict2array(data_doc):
 
         for k in ele.keys():
             if len(ele[k]) > 0:
-                data[k].append(ele[k])
+                data[k].append(np.array(ele[k]))
 
     for k in data.keys():
         if len(data[k]) > 0:
