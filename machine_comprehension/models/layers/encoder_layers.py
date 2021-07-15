@@ -1,8 +1,10 @@
+__author__ = 'han'
+
 import h5py
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
-from ...utils.functions import masked_softmax, compute_mask, masked_flip
+from ...utils.functions import compute_mask
 
 
 class GloveEmbedding(torch.nn.Module):

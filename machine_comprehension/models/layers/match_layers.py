@@ -1,9 +1,8 @@
-import h5py
+__author__ = 'han'
+
 import torch
 import torch.nn.functional as F
-import numpy as np
-from ...utils.functions import masked_softmax, compute_mask, masked_flip
-
+from ...utils.functions import masked_flip
 
 
 class MatchRNNAttention(torch.nn.Module):
@@ -188,7 +187,7 @@ class MatchRNN(torch.nn.Module):
 
             right_hidden = masked_flip(right_hidden_inv, Hp_mask, flip_dim=0)
 
-            rtn_para['right'] = {'alpha': right_alpha} #, 'gated': right_gated}
+            rtn_para['right'] = {'alpha': right_alpha}  # , 'gated': right_gated}
             rtn_hidden = torch.cat((left_hidden, right_hidden), dim=2)
 
         real_rtn_hidden = Hp_mask.transpose(0, 1).unsqueeze(2) * rtn_hidden

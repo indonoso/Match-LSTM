@@ -1,13 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 __author__ = 'han'
 
-import h5py
 import torch
 import torch.nn.functional as F
-import numpy as np
-from ...utils.functions import masked_softmax, compute_mask, masked_flip
+
+from ...utils.functions import masked_softmax
 
 
 class PointerAttention(torch.nn.Module):
@@ -226,5 +222,3 @@ class MultiHopBdPointer(torch.nn.Module):
         rtn_beta = beta + new_mask.unsqueeze(0)
 
         return rtn_beta
-
-

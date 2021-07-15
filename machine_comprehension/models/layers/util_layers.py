@@ -1,8 +1,8 @@
-import h5py
+__author__ = 'han'
+
 import torch
 import torch.nn.functional as F
-import numpy as np
-from ...utils.functions import masked_softmax, compute_mask, masked_flip
+from ...utils.functions import masked_softmax
 
 
 class MyStackedRNN(torch.nn.Module):
@@ -315,6 +315,7 @@ class ForwardNet(torch.nn.Module):
         beta = masked_softmax(o, x_mask, dim=1)
         return beta
 
+
 class MyRNNBase(torch.nn.Module):
     """
     RNN with packed sequence and dropout, only one layer
@@ -399,4 +400,3 @@ class MyRNNBase(torch.nn.Module):
         o_unsort = o.index_select(1, idx_unsort)  # Note that here first dim is seq_len
 
         return o_unsort
-
