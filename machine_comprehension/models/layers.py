@@ -239,7 +239,7 @@ class MatchRNNAttention(torch.nn.Module):
         self.linear_wr = torch.nn.Linear(hidden_size, hidden_size)
         self.linear_wg = torch.nn.Linear(hidden_size, 1)
 
-    def forward(self, Hpi, Hq, Hr_last, Hq_mask):
+    def forward(self, Hpi, Hq, Hr_last):
         wq_hq = self.linear_wq(Hq)  # (question_len, batch, hidden_size)
         wp_hp = self.linear_wp(Hpi).unsqueeze(0)  # (1, batch, hidden_size)
         wr_hr = self.linear_wr(Hr_last).unsqueeze(0)  # (1, batch, hidden_size)
@@ -305,33 +305,25 @@ class UniMatchRNN(torch.nn.Module):
         for t in b:
             torch.nn.init.constant_(t, 0)
 
-    def forward(self, Hp, Hq, Hq_mask):
+    def forward(self, Hp, Hq):
         batch_size = Hp.shape[1]
         context_len = Hp.shape[0]
 
         # init hidden with the same type of input data
         h_0 = Hq.new_zeros(batch_size, self.hidden_size)
         hidden = [(h_0, h_0)] if self.mode == 'LSTM' else [h_0]
-        vis_para = {}
         vis_alpha = []
-        vis_gated = []
 
         for t in range(context_len):
             cur_hp = Hp[t, ...]  # (batch, input_size)
             attention_input = hidden[t][0] if self.mode == 'LSTM' else hidden[t]
 
-            alpha = self.attention.forward(cur_hp, Hq, attention_input, Hq_mask)  # (batch, question_len)
+            alpha = self.attention.forward(cur_hp, Hq, attention_input)  # (batch, question_len)
             vis_alpha.append(alpha)
 
             question_alpha = torch.bmm(alpha.unsqueeze(1), Hq.transpose(0, 1)) \
                 .squeeze(1)  # (batch, input_size)
             cur_z = torch.cat([cur_hp, question_alpha], dim=1)  # (batch, rnn_in_size)
-
-            # gated
-            if self.gated_attention:
-                gate = F.sigmoid(self.gated_linear.forward(cur_z))
-                vis_gated.append(gate.squeeze(-1))
-                cur_z = gate * cur_z
 
             # layer normalization
             if self.enable_layer_norm:
@@ -340,12 +332,11 @@ class UniMatchRNN(torch.nn.Module):
             cur_hidden = self.hidden_cell.forward(cur_z, hidden[t])  # (batch, hidden_size), when lstm output tuple
             hidden.append(cur_hidden)
 
-        # vis_para['gated'] = torch.stack(vis_gated, dim=-1)  # (batch, context_len)
-        vis_para['alpha'] = torch.stack(vis_alpha, dim=2)  # (batch, question_len, context_len)
+        vis_alpha = torch.stack(vis_alpha, dim=2)  # (batch, question_len, context_len)
 
         hidden_state = list(map(lambda x: x[0], hidden)) if self.mode == 'LSTM' else hidden
         result = torch.stack(hidden_state[1:], dim=0)  # (context_len, batch, hidden_size)
-        return result, vis_para
+        return result, vis_alpha
 
 
 class MatchRNN(torch.nn.Module):
@@ -385,13 +376,13 @@ class MatchRNN(torch.nn.Module):
         Hp = self.dropout(Hp)
         Hq = self.dropout(Hq)
 
-        left_hidden, left_para = self.left_match_rnn.forward(Hp, Hq, Hq_mask)
+        left_hidden, left_para = self.left_match_rnn.forward(Hp, Hq)
         rtn_hidden = left_hidden
         rtn_para = {'left': left_para}
 
         if self.bidirectional:
             Hp_inv = masked_flip(Hp, Hp_mask, flip_dim=0)
-            right_hidden_inv, right_para_inv = self.right_match_rnn.forward(Hp_inv, Hq, Hq_mask)
+            right_hidden_inv, right_para_inv = self.right_match_rnn.forward(Hp_inv, Hq)
 
             # flip back to normal sequence
             right_alpha_inv = right_para_inv['alpha']
@@ -692,7 +683,7 @@ class MyRNNBase(torch.nn.Module):
         for t in b:
             torch.nn.init.constant_(t, 0)
 
-    def forward(self, v, mask):
+    def forward(self, v, lengths):
         # layer normalization
         if self.enable_layer_norm:
             seq_len, batch, input_size = v.shape
@@ -701,7 +692,6 @@ class MyRNNBase(torch.nn.Module):
             v = v.view(seq_len, batch, input_size)
 
         # get sorted v
-        lengths = mask.eq(1).long().sum(1)
         lengths_sort, idx_sort = torch.sort(lengths, dim=0, descending=True)
         _, idx_unsort = torch.sort(idx_sort, dim=0)
 
@@ -717,12 +707,7 @@ class MyRNNBase(torch.nn.Module):
         # unsorted o
         o_unsort = o.index_select(1, idx_unsort)  # Note that here first dim is seq_len
 
-        # get the last time state
-        len_idx = (lengths - 1).view(-1, 1).expand(-1, o_unsort.size(2)).unsqueeze(0)
-        o_last = o_unsort.gather(0, len_idx)
-        o_last = o_last.squeeze(0)
-
-        return o_unsort, o_last
+        return o_unsort
 
 
 class MyStackedRNN(torch.nn.Module):
