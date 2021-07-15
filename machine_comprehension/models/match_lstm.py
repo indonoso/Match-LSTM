@@ -79,16 +79,16 @@ class MatchLSTM(torch.nn.Module):
         """
 
         # get embedding: (seq_len, batch, embedding_size)
-        context_vec, context_mask = self.embedding.forward(context)
-        question_vec, question_mask = self.embedding.forward(question)
+        context_vec,  context_lengths = self.embedding.forward(context)
+        question_vec, question_lengths = self.embedding.forward(question)
 
         # encode: (seq_len, batch, hidden_size)
-        context_encode, _ = self.encoder.forward(context_vec, context_mask)
-        question_encode, _ = self.encoder.forward(question_vec, question_mask)
+        context_encode = self.encoder.forward(context_vec, context_lengths)
+        question_encode = self.encoder.forward(question_vec, question_lengths)
 
         # match lstm: (seq_len, batch, hidden_size)
-        qt_aware_ct, qt_aware_last_hidden, match_para = self.match_rnn.forward(context_encode, context_mask,
-                                                                               question_encode, question_mask)
+        qt_aware_ct, qt_aware_last_hidden, match_para = self.match_rnn.forward(context_encode, context_lengths,
+                                                                               question_encode, question_lengths)
         vis_param = {'match': match_para}
 
         # pointer net: (answer_len, batch, context_len)
