@@ -8,7 +8,7 @@ import torch
 import logging
 import argparse
 import torch.optim as optim
-from machine_comprehension.dataset import SquadDataset
+from machine_comprehension.dataset.squad_dataset import SquadDataset
 from machine_comprehension.models import *
 from machine_comprehension.models.loss import MyNLLLoss
 from machine_comprehension.utils.load_config import init_logging, read_config

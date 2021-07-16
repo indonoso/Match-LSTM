@@ -33,15 +33,11 @@ def eval_on_model(model, criterion, batch_data, epoch, device):
         bat_answer_range = batch[-1]
 
         # forward
-        batch_input = batch[:len(batch) - 1]
+        batch_input = batch[:-1]
         tmp_ans_prop, tmp_ans_range, _ = model.forward(*batch_input)
 
         tmp_size = bat_answer_range.shape[0]
         dev_data_size += tmp_size
-
-        # get loss
-        batch_loss = criterion.forward(tmp_ans_prop, bat_answer_range[:, 0:2])
-        sum_loss += batch_loss.item() * tmp_size
 
         # calculate the mean em and f1 score
         for i in range(tmp_size):
@@ -51,15 +47,15 @@ def eval_on_model(model, criterion, batch_data, epoch, device):
                                     tmp_ans_range[i].cpu().numpy(),
                                     bat_answer_range[i].cpu().numpy())
         if epoch is None:
-            logger.info('test: batch=%d/%d, cur_score_em=%.2f, cur_score_f1=%.2f, batch_loss=%.5f' %
-                        (bnum, batch_cnt, num_em * 1. / dev_data_size, score_f1 / dev_data_size, batch_loss))
+            logger.info('test: batch=%d/%d, cur_score_em=%.2f, cur_score_f1=%.2f' %
+                        (bnum, batch_cnt, num_em * 1. / dev_data_size, score_f1 / dev_data_size))#, batch_loss))
         else:
-            logger.info('epoch=%d, batch=%d/%d, cur_score_em=%.2f, cur_score_f1=%.2f, batch_loss=%.5f' %
-                        (epoch, bnum, batch_cnt, num_em * 1. / dev_data_size, score_f1 / dev_data_size, batch_loss))
+            logger.info('epoch=%d, batch=%d/%d, cur_score_em=%.2f, cur_score_f1=%.2f' %
+                        (epoch, bnum, batch_cnt, num_em * 1. / dev_data_size, score_f1 / dev_data_size))#, batch_loss))
 
         # manual release memory, todo: really effect?
         del bat_context, bat_answer_range, batch, batch_input
-        del tmp_ans_prop, tmp_ans_range, batch_loss
+        del tmp_ans_prop, tmp_ans_range #, batch_loss
         # torch.cuda.empty_cache()
 
     score_em = num_em * 100.0 / dev_data_size
@@ -125,4 +121,4 @@ def evaluate_f1(context_tokens, y_pred, y_true):
             f1 = 2 * precision * recall / (precision + recall)
         all_f1.append(f1)
 
-    return max(all_f1)
+    return max(all_f1) if len(all_f1) > 0 else 0
