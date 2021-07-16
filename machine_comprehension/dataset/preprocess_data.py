@@ -309,20 +309,10 @@ class PreprocessData:
         handle glove embeddings, restore embeddings with dictionary
         :return:
         """
-        logger.info("read glove from text file %s" % self._glove_path)
-        with zipfile.ZipFile(self._glove_path, 'r') as zf:
-
-            glove_name = 'glove.6B.300d.txt'
-
-            word_num = 0
-            with zf.open(glove_name) as f:
-                for line in f:
-                    line_split = line.decode('utf-8').split(' ')
-                    self._word2vec[line_split[0]] = [float(x) for x in line_split[1:]]
-
-                    word_num += 1
-                    if word_num % 10000 == 0:
-                        logger.info('handle word No.%d' % word_num)
+        with open(self._glove_path, 'r') as f:
+            for line in f:
+                line_split = line.split(' ')
+                self._word2vec[line_split[0]] = np.asarray(line_split[1:], "float32")
 
     def _handle_kg(self):
         """
@@ -428,9 +418,6 @@ class PreprocessData:
             'samples_id': np.array(dev_cache_nopad['samples_id'])
         }
 
-        logger.info('export to hdf5 file...')
-        self._export_squad_hdf5()
-
         logger.info('finished.')
 
 
@@ -451,7 +438,7 @@ def dict2array(data_doc):
 
         for k in ele.keys():
             if len(ele[k]) > 0:
-                data[k].append(np.array(ele[k]))
+                data[k].append(ele[k])
 
     for k in data.keys():
         if len(data[k]) > 0:
