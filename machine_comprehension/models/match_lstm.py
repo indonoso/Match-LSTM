@@ -7,7 +7,6 @@ import torch
 from ..utils.functions import answer_search
 from .layers.answer_point_layers import BoundaryPointer
 from .layers.util_layers import MyRNNBase
-from .layers.encoder_layers import GloveEmbedding
 from .layers.match_layers import MatchRNN
 
 
@@ -29,28 +28,15 @@ class MatchLSTM(torch.nn.Module):
         vis_alpha: to show on visdom
     """
 
-    def __init__(self, dataset_h5_path):
+    def __init__(self, hidden_size=150, dropout_p=0.04, emb_dropout_p=0.1, enable_layer_norm=False, hidden_mode='LSTM',
+                 word_embedding_size=300, encoder_bidirection=True, match_lstm_bidirection=True, prt_bidirection=True):
         super(MatchLSTM, self).__init__()
 
-        # set config
-        hidden_size = 150
-        dropout_p = 0.4
-        emb_dropout_p = 0.1
-        enable_layer_norm = False
-        hidden_mode = 'LSTM'
-
-        word_embedding_size = 300
-        encoder_bidirection = True
         encoder_direction_num = 2 if encoder_bidirection else 1
 
-        match_lstm_bidirection = True
         match_rnn_direction_num = 2 if match_lstm_bidirection else 1
 
-        ptr_bidirection = True
         self.enable_search = True
-
-        # construct model
-        self.embedding = GloveEmbedding(dataset_h5_path=dataset_h5_path)
 
         self.encoder = MyRNNBase(mode=hidden_mode,
                                  input_size=word_embedding_size,
@@ -76,17 +62,10 @@ class MatchLSTM(torch.nn.Module):
                                            dropout_p=dropout_p,
                                            enable_layer_norm=enable_layer_norm)
 
-    def forward(self, context, question, context_char=None, question_char=None, context_f=None, question_f=None):
+    def forward(self, context_vec, context_lengths, question_vec, question_lengths, context_char=None, question_char=None, context_f=None, question_f=None):
         """
         context_char and question_char not used
         """
-
-        # get embedding: (seq_len, batch, embedding_size)
-        context_vec,  context_lengths = self.embedding.forward(context)
-        question_vec, question_lengths = self.embedding.forward(question)
-
-        context_lengths = context_lengths.sum(1)
-        question_lengths = question_lengths.sum(1)
 
         # encode: (seq_len, batch, hidden_size)
         context_encode = self.encoder.forward(context_vec, context_lengths)
