@@ -22,20 +22,18 @@ class PointerAttention(torch.nn.Module):
     def __init__(self, input_size, hidden_size):
         super(PointerAttention, self).__init__()
 
-        self.linear_wr = torch.nn.Linear(input_size, hidden_size)
-        self.linear_wa = torch.nn.Linear(hidden_size, hidden_size)
-        self.linear_wf = torch.nn.Linear(hidden_size, 1)
+        self.linear_V = torch.nn.Linear(input_size, hidden_size)
+        self.linear_Wa = torch.nn.Linear(hidden_size, hidden_size)
+        self.linear_v = torch.nn.Linear(hidden_size, 1)
 
-    def forward(self, Hr, Hr_mask, Hk_pre):
-        wr_hr = self.linear_wr(Hr)  # (context_len, batch, hidden_size)
-        wa_ha = self.linear_wa(Hk_pre).unsqueeze(0)  # (1, batch, hidden_size)
-        f = F.tanh(wr_hr + wa_ha)  # (context_len, batch, hidden_size)
+    def forward(self, Hr, Hk_pre):
+        V_Hr = self.linear_V(Hr)  # (context_len, batch, hidden_size)
+        Wa_Hr_pre = self.linear_Wa(Hk_pre).unsqueeze(0)  # (1, batch, hidden_size)
+        F_ = F.tanh(V_Hr + Wa_Hr_pre)  # (context_len, batch, hidden_size)
 
-        beta_tmp = self.linear_wf(f) \
-            .squeeze(2) \
-            .transpose(0, 1)  # (batch, context_len)
+        beta_tmp = self.linear_v(F_).squeeze(2).transpose(0, 1)  # (batch, context_len)
 
-        beta = masked_softmax(beta_tmp, m=Hr_mask, dim=1)
+        beta = torch.softmax(beta_tmp, dim=1)
         return beta
 
 
@@ -91,7 +89,7 @@ class UniBoundaryPointer(torch.nn.Module):
         for t in b:
             torch.nn.init.constant_(t, 0)
 
-    def forward(self, Hr, Hr_mask, h_0=None):
+    def forward(self, Hr, h_0=None):
         if h_0 is None:
             batch_size = Hr.shape[1]
             h_0 = Hr.new_zeros(batch_size, self.hidden_size)
@@ -101,11 +99,10 @@ class UniBoundaryPointer(torch.nn.Module):
 
         for t in range(self.answer_len):
             attention_input = hidden[0] if self.mode == 'LSTM' else hidden
-            beta = self.attention.forward(Hr, Hr_mask, attention_input)  # (batch, context_len)
+            beta = self.attention.forward(Hr, attention_input)  # (batch, context_len)
             beta_out.append(beta)
 
-            context_beta = torch.bmm(beta.unsqueeze(1), Hr.transpose(0, 1)) \
-                .squeeze(1)  # (batch, input_size)
+            context_beta = torch.bmm(beta.unsqueeze(1), Hr.transpose(0, 1)).squeeze(1)  # (batch, input_size)
 
             if self.enable_layer_norm:
                 context_beta = self.layer_norm(context_beta)  # (batch, input_size)
@@ -144,20 +141,20 @@ class BoundaryPointer(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(p=dropout_p)
 
-    def forward(self, Hr, Hr_mask, h_0=None):
+    def forward(self, Hr, h_0=None):
         Hr = self.dropout.forward(Hr)
 
-        left_beta, _ = self.left_ptr_rnn.forward(Hr, Hr_mask, h_0)
+        left_beta, _ = self.left_ptr_rnn.forward(Hr, h_0)
         rtn_beta = left_beta
         if self.bidirectional:
-            right_beta_inv, _ = self.right_ptr_rnn.forward(Hr, Hr_mask, h_0)
+            right_beta_inv, _ = self.right_ptr_rnn.forward(Hr, h_0)
             right_beta = right_beta_inv[[1, 0], :]
 
             rtn_beta = (left_beta + right_beta) / 2
 
         # todo: unexplainable
-        new_mask = torch.neg((Hr_mask - 1) * 1e-6)  # mask replace zeros with 1e-6, make sure no gradient explosion
-        rtn_beta = rtn_beta + new_mask.unsqueeze(0)
+        # new_mask = torch.neg((Hr_mask - 1) * 1e-6)  # mask replace zeros with 1e-6, make sure no gradient explosion
+        # rtn_beta = rtn_beta + new_mask.unsqueeze(0)
 
         return rtn_beta
 
@@ -192,7 +189,7 @@ class MultiHopBdPointer(torch.nn.Module):
 
         beta_last = None
         for i in range(self.num_hops):
-            beta, h_0 = self.ptr_rnn.forward(Hr, Hr_mask, h_0)
+            beta, h_0 = self.ptr_rnn.forward(Hr, h_0)
             if beta_last is not None and (beta_last == beta).sum().item() == beta.shape[0]:  # beta not changed
                 break
 

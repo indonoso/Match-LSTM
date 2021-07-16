@@ -162,7 +162,7 @@ class MatchRNN(torch.nn.Module):
 
         self.dropout = torch.nn.Dropout(p=dropout_p)
 
-    def forward(self, Hp, Hp_mask, Hq, Hq_mask):
+    def forward(self, Hp, p_length, Hq, Hq_mask):
         Hp = self.dropout(Hp)
         Hq = self.dropout(Hq)
 
@@ -171,13 +171,13 @@ class MatchRNN(torch.nn.Module):
         rtn_para = {'left': left_para}
 
         if self.bidirectional:
-            Hp_inv = masked_flip(Hp, Hp_mask, flip_dim=0)
+            Hp_inv = masked_flip(Hp, p_length, flip_dim=0)
             right_hidden_inv, right_para_inv = self.right_match_rnn.forward(Hp_inv, Hq)
 
             # flip back to normal sequence
-            right_alpha_inv = right_para_inv['alpha']
+            right_alpha_inv = right_para_inv
             right_alpha_inv = right_alpha_inv.transpose(0, 1)  # make sure right flip
-            right_alpha = masked_flip(right_alpha_inv, Hp_mask, flip_dim=2)
+            right_alpha = masked_flip(right_alpha_inv, p_length, flip_dim=2)
             right_alpha = right_alpha.transpose(0, 1)
 
             # right_gated_inv = right_para_inv['gated']
@@ -185,12 +185,12 @@ class MatchRNN(torch.nn.Module):
             # right_gated = masked_flip(right_gated_inv, Hp_mask, flip_dim=2)
             # right_gated = right_gated.transpose(0, 1)
 
-            right_hidden = masked_flip(right_hidden_inv, Hp_mask, flip_dim=0)
+            right_hidden = masked_flip(right_hidden_inv, p_length, flip_dim=0)
 
-            rtn_para['right'] = {'alpha': right_alpha}  # , 'gated': right_gated}
+            rtn_para['right'] = right_alpha  # , 'gated': right_gated}
             rtn_hidden = torch.cat((left_hidden, right_hidden), dim=2)
 
-        real_rtn_hidden = Hp_mask.transpose(0, 1).unsqueeze(2) * rtn_hidden
+        #real_rtn_hidden = p_length.transpose(0, 1).unsqueeze(2) * rtn_hidden
         last_hidden = rtn_hidden[-1, :]
 
-        return real_rtn_hidden, last_hidden, rtn_para
+        return rtn_hidden, last_hidden, rtn_para
