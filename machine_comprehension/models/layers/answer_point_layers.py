@@ -39,24 +39,6 @@ class PointerAttention(torch.nn.Module):
         return beta
 
 
-class SeqPointer(torch.nn.Module):
-    r"""
-    Sequence Pointer Net that output every possible answer position in context
-    Args:
-
-    Inputs:
-        Hr: question-aware context representation
-    Outputs:
-        **output** every answer index possibility position in context, no fixed length
-    """
-
-    def __init__(self):
-        super(SeqPointer, self).__init__()
-
-    def forward(self, *input):
-        return NotImplementedError
-
-
 class UniBoundaryPointer(torch.nn.Module):
     r"""
     Unidirectional Boundary Pointer Net that output start and end possible answer position in context
