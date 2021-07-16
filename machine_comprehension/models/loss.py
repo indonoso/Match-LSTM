@@ -21,7 +21,7 @@ class MyNLLLoss(torch.nn.modules.loss._Loss):
         super(MyNLLLoss, self).__init__()
 
     def forward(self, y_pred, y_true):
-        torch.nn.modules.loss._assert_no_grad(y_true)
+        # torch.nn.modules.loss._assert_no_grad(y_true)
 
         y_pred_log = torch.log(y_pred)
         start_loss = F.nll_loss(y_pred_log[:, 0, :], y_true[:, 0])
