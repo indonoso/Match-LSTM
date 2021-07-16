@@ -44,9 +44,10 @@ class SquadDataset:
 
             for name in ['train', 'dev']:
                 self._data[name] = {}
-                for sub_name in ['answer_range', 'samples_id']:
-                    self._data[name][sub_name] = np.array(f_data[name][sub_name])
-
+                sub_name = 'samples_id'
+                self._data[name][sub_name] = np.array([x.decode() for x in f_data[name][sub_name]])
+                sub_name = 'answer_range'
+                self._data[name][sub_name] = np.array(f_data[name][sub_name])
                 for sub_name in ['context', 'question']:
                     cur_data = f_data[name][sub_name]
                     self._data[name][sub_name] = {}
