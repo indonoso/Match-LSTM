@@ -5,7 +5,10 @@ __author__ = 'han'
 
 import torch
 from ..utils.functions import answer_search
-from .layers import MyRNNBase, MatchRNN, GloveEmbedding, BoundaryPointer
+from .layers.answer_point_layers import BoundaryPointer
+from .layers.util_layers import MyRNNBase
+from .layers.encoder_layers import GloveEmbedding
+from .layers.match_layers import MatchRNN
 
 
 class MatchLSTM(torch.nn.Module):

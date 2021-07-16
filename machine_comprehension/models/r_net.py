@@ -4,8 +4,10 @@
 __author__ = 'han'
 
 import torch
-from .layers import GloveEmbedding, CharEncoder, CharEmbedding, MyRNNBase, MyStackedRNN, MatchRNN, BoundaryPointer, \
-    AttentionPooling
+from .layers.util_layers import MyRNNBase, MyStackedRNN, AttentionPooling
+from .layers.encoder_layers import GloveEmbedding, CharEmbedding, CharEncoder
+from .layers.match_layers import MatchRNN
+from .layers.answer_point_layers import BoundaryPointer
 from ..utils.functions import answer_search
 
 

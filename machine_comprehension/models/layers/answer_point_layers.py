@@ -3,8 +3,6 @@ __author__ = 'han'
 import torch
 import torch.nn.functional as F
 
-from ...utils.functions import masked_softmax
-
 
 class PointerAttention(torch.nn.Module):
     r"""

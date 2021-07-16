@@ -5,7 +5,10 @@ __author__ = 'han'
 
 import torch
 from machine_comprehension.utils.functions import answer_search
-from .layers import MyRNNBase, MatchRNN, GloveEmbedding, BoundaryPointer, CharEmbedding, CharEncoder
+from .layers.util_layers import MyRNNBase
+from .layers.encoder_layers import GloveEmbedding, CharEmbedding, CharEncoder
+from .layers.match_layers import MatchRNN
+from .layers.answer_point_layers import BoundaryPointer
 import torch.nn.functional as F
 
 
