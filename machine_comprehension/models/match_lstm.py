@@ -85,6 +85,9 @@ class MatchLSTM(torch.nn.Module):
         context_vec,  context_lengths = self.embedding.forward(context)
         question_vec, question_lengths = self.embedding.forward(question)
 
+        context_lengths = context_lengths.sum(1)
+        question_lengths = question_lengths.sum(1)
+
         # encode: (seq_len, batch, hidden_size)
         context_encode = self.encoder.forward(context_vec, context_lengths)
         question_encode = self.encoder.forward(question_vec, question_lengths)
@@ -95,12 +98,12 @@ class MatchLSTM(torch.nn.Module):
         vis_param = {'match': match_para}
 
         # pointer net: (answer_len, batch, context_len)
-        ans_range_prop = self.pointer_net.forward(qt_aware_ct, context_mask)
+        ans_range_prop = self.pointer_net.forward(qt_aware_ct)
         ans_range_prop = ans_range_prop.transpose(0, 1)
 
         # answer range
         if not self.training and self.enable_search:
-            ans_range = answer_search(ans_range_prop, context_mask)
+            ans_range = answer_search(ans_range_prop, context_lengths)
         else:
             _, ans_range = torch.max(ans_range_prop, dim=2)
 
