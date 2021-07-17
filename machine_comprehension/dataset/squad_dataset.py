@@ -12,7 +12,7 @@ import logging
 import pandas as pd
 from .preprocess_data import PreprocessData
 from ..utils.functions import *
-
+import pickle
 logger = logging.getLogger(__name__)
 
 
@@ -28,9 +28,15 @@ class SquadDataset:
         self.global_config = global_config
 
         # whether preprocessing squad dataset
-        is_exist_dataset_h5 = os.path.exists(self.global_config['data']['dataset_h5'])
-        assert is_exist_dataset_h5, 'not found dataset hdf5 file in %s' % self.global_config['data']['dataset_h5']
-        self._load_hdf5()
+        # is_exist_dataset_h5 = os.path.exists(self.global_config['data']['dataset_h5'])
+        # assert is_exist_dataset_h5, 'not found dataset hdf5 file in %s' % self.global_config['data']['dataset_h5']
+        # self._load_hdf5()
+
+        self._load_data()
+
+    def _load_data(self):
+        with open(self.global_config['data']['processed']['dataset_path'], 'rb') as f:
+            self._data = pickle.load(f)
 
     def _load_hdf5(self):
         """
