@@ -201,16 +201,6 @@ class PreprocessData:
                 if cnt % 100 == 0:
                     logger.info('No.%d sample handled.' % cnt)
 
-        # Create POS representation
-        if self.preprocess_config['use_pos']:
-            pos_vec = np.zeros((len(self._pos2id) - 1, len(self._pos2id)), dtype=np.float64)
-            for pos, idx in self._pos2id.items():
-                if idx == PreprocessData.padding_idx:
-                    continue
-                pos_vec[idx - 1, idx] = 1
-
-            self._meta_data['idpos2vec'] = pos_vec
-
         return {'context': contexts_doc,
                 'question': questions_doc,
                 'answer_range': answers_range_wid,
@@ -339,6 +329,17 @@ class PreprocessData:
                 self._kg2vec[line_split[0]] = np.asarray(line_split[1:], "float32")
                
     def save_processing(self):
+
+        # Create POS representation
+        if self.preprocess_config['use_pos']:
+            pos_vec = np.zeros((len(self._pos2id), len(self._pos2id) - 1,), dtype=np.float64)
+            for pos, idx in self._pos2id.items():
+                if idx == PreprocessData.padding_idx:
+                    continue
+                pos_vec[idx, idx -1] = 1
+
+            self._meta_data['idpos2vec'] = pos_vec
+
         # Save POS
         with open(self.data_config['processed']['pos_embeddings_path'], 'wb') as output:
             pickle.dump(self._meta_data['idpos2vec'], output, pickle.HIGHEST_PROTOCOL)

@@ -120,38 +120,42 @@ class SquadDataset:
         :return:
         """
         context = []
-        context_f = []
+        kg_context = []
+        pos_context = []
         question = []
-        question_f = []
+        kg_question = []
+        pos_question = []
         answer_range = []
-
+        len_context = []
+        len_question = []
         for ele in batch:
             context.append(ele[0])
             question.append(ele[1])
-            context_f.append(ele[2])
-            question_f.append(ele[3])
-            answer_range.append(ele[4])
+            kg_context.append(ele[2])
+            kg_question.append(ele[3])
+            pos_context.append(ele[4])
+            pos_question.append(ele[5])
+            len_context.append(ele[6])
+            len_question.append(ele[7])
+            answer_range.append(ele[8])
 
         # word idx
-        bat_context, max_ct_len = del_zeros_right(torch.stack(context, dim=0))
-        bat_question, max_qt_len = del_zeros_right(torch.stack(question, dim=0))
-        bat_answer, _ = del_zeros_right(torch.stack(answer_range, dim=0))
+        bat_context = del_zeros_right(torch.stack(context, dim=0))
+        bat_question = del_zeros_right(torch.stack(question, dim=0))
 
-        # additional features
-        bat_context_f = None
-        bat_question_f = None
-        if context_f[0] is not None:
-            bat_context_f = torch.stack(context_f, dim=0)[:, 0:max_ct_len, :]
-            bat_question_f = torch.stack(question_f, dim=0)[:, 0:max_qt_len, :]
+        bat_kg_context = del_zeros_right(torch.stack(kg_context, dim=0))
+        bat_kg_question = del_zeros_right(torch.stack(kg_question, dim=0))
 
-        # generate char idx
-        bat_context_char = None
-        bat_question_char = None
-        if self.global_config['preprocess']['use_char']:
-            bat_context_char = self._batch_word_to_char(bat_context)
-            bat_question_char = self._batch_word_to_char(bat_question)
+        bat_pos_context = del_zeros_right(torch.stack(pos_context, dim=0))
+        bat_pos_question = del_zeros_right(torch.stack(pos_question, dim=0))
 
-        return bat_context, bat_question, bat_context_char, bat_question_char, bat_context_f, bat_question_f, bat_answer
+        bat_len_context = torch.Tensor(np.array(len_context))
+        bat_len_question = torch.Tensor(np.array(len_question))
+
+        bat_answer = del_zeros_right(torch.stack(answer_range, dim=0))
+
+        return bat_context, bat_question, bat_kg_context, bat_kg_question, bat_pos_context, bat_pos_question,\
+               bat_len_context, bat_len_question, bat_answer
 
     def get_batch_train(self, batch_size):
         """
