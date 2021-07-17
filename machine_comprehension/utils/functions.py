@@ -150,7 +150,7 @@ def masked_softmax(x, m=None, dim=-1):
     return softmax
 
 
-def answer_search(answer_prop, mask, max_tokens=15):
+def answer_search(answer_prop, lengths, max_tokens=15):
     """
     global search best answer for model predict
     :param answer_prop: (batch, answer_len, context_len)
@@ -160,13 +160,12 @@ def answer_search(answer_prop, mask, max_tokens=15):
     context_len = answer_prop.shape[2]
 
     # get min length
-    lengths = mask.data.eq(1).long().sum(1).squeeze()
     min_length, _ = torch.min(lengths, 0)
     min_length = min_length.item()
 
     # max move steps
     max_move = max_tokens + context_len - min_length
-    max_move = min(context_len, max_move)
+    max_move = int(min(context_len, max_move))
 
     ans_s_p = answer_prop[:, 0, :]
     ans_e_p = answer_prop[:, 1, :]
@@ -213,7 +212,6 @@ def del_zeros_right(tensor):
     :param tensor: (batch, seq_len)
     :return:
     """
-
     seq_len = tensor.shape[1]
     last_col = seq_len
     for i in range(seq_len - 1, -1, -1):
@@ -228,7 +226,7 @@ def del_zeros_right(tensor):
     return tensor, last_col
 
 
-def masked_flip(vin, mask, flip_dim=0):
+def masked_flip(vin, length, flip_dim=0):
     """
     flip a tensor
     :param vin: (..., batch, ...), batch should on dim=1, input batch with padding values
@@ -236,7 +234,6 @@ def masked_flip(vin, mask, flip_dim=0):
     :param flip_dim: dim to flip on
     :return:
     """
-    length = mask.data.eq(1).long().sum(1)
     batch_size = vin.shape[1]
 
     flip_list = []
@@ -244,7 +241,7 @@ def masked_flip(vin, mask, flip_dim=0):
         cur_tensor = vin[:, i, :]
         cur_length = length[i]
 
-        idx = list(range(cur_length - 1, -1, -1)) + list(range(cur_length, vin.shape[flip_dim]))
+        idx = list(range(cur_length.long() - 1, -1, -1)) + list(range(cur_length.long(), vin.shape[flip_dim]))
         idx = vin.new_tensor(idx, dtype=torch.long)
 
         cur_inv_tensor = cur_tensor.unsqueeze(1).index_select(flip_dim, idx).squeeze(1)

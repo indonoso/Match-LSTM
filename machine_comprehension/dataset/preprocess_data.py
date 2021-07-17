@@ -334,13 +334,7 @@ class PreprocessData:
                         data = sub_grp.create_dataset(subsub_key, subsub_value.shape, dtype=cur_dtype,
                                                       **self._compress_option)
                         data[...] = subsub_value
-                elif isinstance(sub_value, np.ndarray) and isinstance(sub_value[0], np.ndarray):
-                    sub_grp = data_grp.create_group(sub_key)
-                    cur_dtype = str_dt if sub_value[0][0].dtype.type is np.str_ else sub_value[0][0].dtype
-                    for i, d in enumerate(sub_value):
-                        data = sub_grp.create_dataset(str(i), (len(d), ), dtype=cur_dtype,
-                                                **self._compress_option)
-                        data[...] = d
+
                 else:
                     cur_dtype = str_dt if sub_value.dtype.type is np.str_ else sub_value.dtype
                     data = data_grp.create_dataset(sub_key, sub_value.shape, dtype=cur_dtype,

@@ -114,23 +114,23 @@ def main():
     s = 0
     e = 48
 
-    x_left = vis_param['match']['left']['alpha'][0, :, s:e].numpy()
-    x_right = vis_param['match']['right']['alpha'][0, :, s:e].numpy()
+    x_left = vis_param['match']['left'][0, :, s:e].numpy()
+    x_right = vis_param['match']['right'][0, :, s:e].numpy()
 
-    x_left_gated = vis_param['match']['left']['gated'][0, :, s:e].numpy()
-    x_right_gated = vis_param['match']['right']['gated'][0, :, s:e].numpy()
+    # x_left_gated = vis_param['match']['left']['gated'][0, :, s:e].numpy()
+    # x_right_gated = vis_param['match']['right']['gated'][0, :, s:e].numpy()
 
     draw_heatmap_sea(x_left,
                      xlabels=context_token[s:e],
                      ylabels=question_token,
                      answer=answer,
-                     save_path='data/test-left.png',
+                     save_path='../data/test-left.png',
                      bottom=0.45)
     draw_heatmap_sea(x_right,
                      xlabels=context_token[s:e],
                      ylabels=question_token,
                      answer=answer,
-                     save_path='data/test-right.png',
+                     save_path='../data/test-right.png',
                      bottom=0.45)
 
     enable_self_match = False

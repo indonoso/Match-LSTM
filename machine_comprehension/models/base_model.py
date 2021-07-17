@@ -6,8 +6,10 @@ __author__ = 'han'
 import torch
 import torch.nn as nn
 from ..utils.functions import answer_search, multi_scale_ptr
-from .layers import MyRNNBase, MatchRNN, GloveEmbedding, BoundaryPointer, CharEmbedding, CharEncoder, CharCNNEncoder,\
-    MyStackedRNN, SelfGated, MultiHopBdPointer, AttentionPooling
+from .layers.util_layers import MyRNNBase, MyStackedRNN, SelfGated, AttentionPooling
+from .layers.encoder_layers import GloveEmbedding, CharEmbedding, CharEncoder, CharCNNEncoder
+from .layers.match_layers import MatchRNN
+from .layers.answer_point_layers import BoundaryPointer, MultiHopBdPointer
 import torch.nn.functional as F
 
 

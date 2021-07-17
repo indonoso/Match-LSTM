@@ -8,7 +8,7 @@ import torch
 import logging
 import argparse
 import torch.optim as optim
-from machine_comprehension.dataset import SquadDataset
+from machine_comprehension.dataset.squad_dataset import SquadDataset
 from machine_comprehension.models import *
 from machine_comprehension.models.loss import MyNLLLoss
 from machine_comprehension.utils.load_config import init_logging, read_config
@@ -157,7 +157,7 @@ def train_on_model(model, criterion, optimizer, batch_data, epoch, clip_grad_max
         bat_answer_range = batch[-1]
 
         # forward
-        batch_input = batch[:len(batch)-1]
+        batch_input = batch[:-1]
         ans_range_prop, _, _ = model.forward(*batch_input)
 
         # get loss
