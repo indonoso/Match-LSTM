@@ -5,7 +5,7 @@ __author__ = 'han'
 
 import logging
 from ..dataset.preprocess_data import PreprocessData
-
+from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +25,7 @@ def eval_on_model(model, criterion, batch_data, epoch, device):
     score_f1 = 0.
     sum_loss = 0.
 
-    for bnum, batch in enumerate(batch_data):
+    for bnum, batch in enumerate(tqdm(batch_data, desc=f'Evaluating epoch {epoch}', position=0, leave=True)):
 
         # batch data
         batch = [x.to(device) if x is not None else x for x in batch]
@@ -49,14 +49,10 @@ def eval_on_model(model, criterion, batch_data, epoch, device):
         if epoch is None:
             logger.info('test: batch=%d/%d, cur_score_em=%.2f, cur_score_f1=%.2f' %
                         (bnum, batch_cnt, num_em * 1. / dev_data_size, score_f1 / dev_data_size))#, batch_loss))
-        else:
-            logger.info('epoch=%d, batch=%d/%d, cur_score_em=%.2f, cur_score_f1=%.2f' %
-                        (epoch, bnum, batch_cnt, num_em * 1. / dev_data_size, score_f1 / dev_data_size))#, batch_loss))
 
         # manual release memory, todo: really effect?
         del bat_context, bat_answer_range, batch, batch_input
-        del tmp_ans_prop, tmp_ans_range #, batch_loss
-        # torch.cuda.empty_cache()
+        del tmp_ans_prop, tmp_ans_range
 
     score_em = num_em * 100.0 / dev_data_size
     score_f1 = score_f1 * 100.0 / dev_data_size
