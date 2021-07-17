@@ -428,7 +428,7 @@ class CQA_Dataset(torch.utils.data.Dataset):
         pos_context = to_long_tensor(self.context['pos'][index])
         pos_question = to_long_tensor(self.question['pos'][index])
 
-        answer = to_long_tensor(self.answer_range[index])
+        answer = to_long_tensor(np.array(self.answer_range[index]))
 
         return word_context, word_question, kg_context, kg_question, pos_context, pos_question, len_context, len_question, answer
 
