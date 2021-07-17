@@ -196,7 +196,7 @@ class PreprocessData:
 
                     cur_ans_range_ids[(idx * 2):(idx * 2 + 2)] = [pos_s, pos_e]
                 if len(cur_ans_range_ids) == 0:
-                    cur_ans_range_ids = [self.preprocess_config["ignore_max_len"], self.preprocess_config["ignore_max_len"]]
+                    cur_ans_range_ids = [len(cur_context_doc) - 1, len(cur_context_doc) - 1]
                 answers_range_wid.append(cur_ans_range_ids)
 
                 cnt += 1
