@@ -3,7 +3,7 @@
 import re
 import logging
 import torch
-import numpy as np
+from .utils import  aho_find_all
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class DocText:
     define one sample text, like one context or one question
     """
 
-    def __init__(self, nlp, text, config):
+    def __init__(self, tokens2kg, nlp, text, config):
         doc = nlp(text)
         self.config = config
         self.token = []
@@ -23,7 +23,7 @@ class DocText:
         self.ent = []
         self.em = []
         self.em_lemma = []
-
+        self.kg = []
         self.right_space = []   # record whether the right side of every token is a white space
 
         for t in doc:
@@ -49,6 +49,8 @@ class DocText:
 
             if config['use_em']:
                 self.em.append(0)
+
+        self.kg = tokens2kg.process(text)
 
     def __len__(self):
         return len(self.token)

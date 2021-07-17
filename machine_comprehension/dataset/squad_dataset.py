@@ -6,14 +6,13 @@ __author__ = 'han'
 import os
 import h5py
 import math
-import torch
 import torch.utils.data
 from torch.utils.data.sampler import Sampler, SequentialSampler
 import logging
 import pandas as pd
 from .preprocess_data import PreprocessData
 from ..utils.functions import *
-
+import pickle
 logger = logging.getLogger(__name__)
 
 
@@ -29,9 +28,15 @@ class SquadDataset:
         self.global_config = global_config
 
         # whether preprocessing squad dataset
-        is_exist_dataset_h5 = os.path.exists(self.global_config['data']['dataset_h5'])
-        assert is_exist_dataset_h5, 'not found dataset hdf5 file in %s' % self.global_config['data']['dataset_h5']
-        self._load_hdf5()
+        # is_exist_dataset_h5 = os.path.exists(self.global_config['data']['dataset_h5'])
+        # assert is_exist_dataset_h5, 'not found dataset hdf5 file in %s' % self.global_config['data']['dataset_h5']
+        # self._load_hdf5()
+
+        self._load_data()
+
+    def _load_data(self):
+        with open(self.global_config['data']['processed']['dataset_path'], 'rb') as f:
+            self._data = pickle.load(f)
 
     def _load_hdf5(self):
         """
@@ -115,38 +120,42 @@ class SquadDataset:
         :return:
         """
         context = []
-        context_f = []
+        kg_context = []
+        pos_context = []
         question = []
-        question_f = []
+        kg_question = []
+        pos_question = []
         answer_range = []
-
+        len_context = []
+        len_question = []
         for ele in batch:
             context.append(ele[0])
             question.append(ele[1])
-            context_f.append(ele[2])
-            question_f.append(ele[3])
-            answer_range.append(ele[4])
+            kg_context.append(ele[2])
+            kg_question.append(ele[3])
+            pos_context.append(ele[4])
+            pos_question.append(ele[5])
+            len_context.append(ele[6])
+            len_question.append(ele[7])
+            answer_range.append(ele[8])
 
         # word idx
-        bat_context, max_ct_len = del_zeros_right(torch.stack(context, dim=0))
-        bat_question, max_qt_len = del_zeros_right(torch.stack(question, dim=0))
-        bat_answer, _ = del_zeros_right(torch.stack(answer_range, dim=0))
+        bat_context = del_zeros_right(torch.stack(context, dim=0))
+        bat_question = del_zeros_right(torch.stack(question, dim=0))
 
-        # additional features
-        bat_context_f = None
-        bat_question_f = None
-        if context_f[0] is not None:
-            bat_context_f = torch.stack(context_f, dim=0)[:, 0:max_ct_len, :]
-            bat_question_f = torch.stack(question_f, dim=0)[:, 0:max_qt_len, :]
+        bat_kg_context = del_zeros_right(torch.stack(kg_context, dim=0))
+        bat_kg_question = del_zeros_right(torch.stack(kg_question, dim=0))
 
-        # generate char idx
-        bat_context_char = None
-        bat_question_char = None
-        if self.global_config['preprocess']['use_char']:
-            bat_context_char = self._batch_word_to_char(bat_context)
-            bat_question_char = self._batch_word_to_char(bat_question)
+        bat_pos_context = del_zeros_right(torch.stack(pos_context, dim=0))
+        bat_pos_question = del_zeros_right(torch.stack(pos_question, dim=0))
 
-        return bat_context, bat_question, bat_context_char, bat_question_char, bat_context_f, bat_question_f, bat_answer
+        bat_len_context = torch.Tensor(np.array(len_context))
+        bat_len_question = torch.Tensor(np.array(len_question))
+
+        bat_answer = del_zeros_right(torch.stack(answer_range, dim=0))
+
+        return bat_context, bat_question, bat_kg_context, bat_kg_question, bat_pos_context, bat_pos_question,\
+               bat_len_context, bat_len_question, bat_answer
 
     def get_batch_train(self, batch_size):
         """
@@ -407,12 +416,21 @@ class CQA_Dataset(torch.utils.data.Dataset):
         self.lengths = self.get_lengths()
 
     def __getitem__(self, index):
-        cur_context = to_long_tensor(self.context['token'][index])
-        cur_question = to_long_tensor(self.question['token'][index])
-        cur_answer = to_long_tensor(self.answer_range[index])
+        len_context = self.context['length'][index]
+        len_question = self.question['length'][index]
 
-        cur_context_f, cur_question_f = self.addition_feature(index)
-        return cur_context, cur_question, cur_context_f, cur_question_f, cur_answer
+        word_context = to_long_tensor(self.context['token'][index])
+        word_question = to_long_tensor(self.question['token'][index])
+
+        kg_context = to_long_tensor(self.context['kg'][index])
+        kg_question = to_long_tensor(self.question['kg'][index])
+
+        pos_context = to_long_tensor(self.context['pos'][index])
+        pos_question = to_long_tensor(self.question['pos'][index])
+
+        answer = to_long_tensor(self.answer_range[index])
+
+        return word_context, word_question, kg_context, kg_question, pos_context, pos_question, len_context, len_question, answer
 
     def __len__(self):
         return self.answer_range.shape[0]

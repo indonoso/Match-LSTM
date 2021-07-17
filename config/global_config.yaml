@@ -1,13 +1,23 @@
 data:
   dataset:
-    train_path: ../data/dev-v2.0.json
+    train_path: ../data/train-v2.0.json
     dev_path: ../data/dev-v2.0.json
   dataset_h5: ../data/squad_glove.h5
 
-  embedding_path: /home/ivania/Cursos/deep_learning/Match-LSTM/data/glove.6B.zip
+  word_embedding_path: /home/ivania/Cursos/deep_learning/Match-LSTM/data/glove.6B/glove.6B.300d.txt
+  kg_embeddings_vec_path: /home/ivania/Cursos/deep_learning/DNN-Project/entity_embeddings.tsv
+  kg_patterns2id_path: /home/ivania/Cursos/deep_learning/DNN-Project/kg_patterns2id.json
 
   model_path: ../data/model-weight.pt
   checkpoint_path: ../data/checkpoint
+
+  processed:
+    kg_embeddings_path: /home/ivania/Cursos/deep_learning/DNN-Project/kg_embeddings
+    pos_embeddings_path: /home/ivania/Cursos/deep_learning/DNN-Project/pos_embeddings.pickle
+    word_embeddings_path: /home/ivania/Cursos/deep_learning/DNN-Project/word_embeddings
+    meta_path: /home/ivania/Cursos/deep_learning/DNN-Project/meta.pickle
+    dataset_path: /home/ivania/Cursos/deep_learning/DNN-Project/dataset.pickle
+
 
 global:
   random_seed: 123
@@ -17,18 +27,20 @@ global:
 
 preprocess:
   word_embedding_size: 300
+  kg_embedding_size: 32
   ignore_max_len: 600 # in train data, context token len > ignore_max_len will be dropped
-  use_char: True
+  use_char: False
   use_pos: True
-  use_ent: True
-  use_em: True
-  use_em_lemma: True
+  use_ent: False
+  use_em: False
+  use_kg: True
+  use_em_lemma: False
 
 train:
   batch_size: 32
   valid_batch_size: 32
   epoch: 30
-  enable_cuda: True
+  enable_cuda: False
 
   optimizer: 'adamax'  # adam, sgd, adamax, adadelta(default is adamax)
   learning_rate: 0.002  # only for sgd
@@ -36,4 +48,4 @@ train:
 
 test:
   batch_size: 32
-  enable_cuda: True
+  enable_cuda: False

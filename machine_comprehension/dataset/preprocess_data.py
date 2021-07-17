@@ -3,16 +3,16 @@
 
 __author__ = 'han'
 
-import zipfile
 import spacy
 import json
 import h5py
 import logging
 import numpy as np
+import pickle
 from functools import reduce
 from ..utils.functions import pad_sequences
 from .doc_text import DocText, Space
-
+from .kg import KGEmbeddings
 logger = logging.getLogger(__name__)
 
 
@@ -29,11 +29,13 @@ class PreprocessData:
 
     def __init__(self, global_config):
         # data config
+        # TODO check configs
         self._dev_path = ''
         self._train_path = ''
         self._export_squad_path = ''
         self._glove_path = ''
-        self._embedding_size = 300
+        self._word_embedding_size = 300
+        self._kg_embedding_size = 100
         self._ignore_max_len = 10000
         self._load_config(global_config)
 
@@ -45,15 +47,22 @@ class PreprocessData:
         self._char2id = {self.padding: 0, '`': 1}  # because nltk word tokenize will replace '"' with '``'
         self._pos2id = {self.padding: 0}
         self._ent2id = {self.padding: 0}
-        self._word2vec = {self.padding: [0. for i in range(self._embedding_size)]}
+        self._kg2id = {self.padding: 0}
+        self._word2vec = {self.padding: [0. for _ in range(self._word_embedding_size)]}
+        self._kg2vec = {self.padding: [0. for _ in range(self._kg_embedding_size)]}
         self._oov_num = 0
+        self._kg_num = 0
 
         # data need to store in hdf5 file
-        self._meta_data = {'id2vec': [[0. for i in range(self._embedding_size)]],
+        self._meta_data = {'id2vec': [[0. for _ in range(self._word_embedding_size)]],
                            'id2word': [self.padding],
                            'id2char': [self.padding, '`'],
                            'id2pos': [self.padding],
-                           'id2ent': [self.padding]}
+                           'id2ent': [self.padding],
+                           'id2kg': [self.padding],
+                           'idkg2vec': [[0. for _ in range(self._kg_embedding_size)]],
+                           'idpos2vec': None,
+                           }
         self._data = {}
         self._attr = {}
 
@@ -64,17 +73,21 @@ class PreprocessData:
         if not self._use_ent:
             self._nlp.remove_pipe('ner')
 
+        self.kg_processor = KGEmbeddings(self._kg_patterns2id_path)
+
     def _load_config(self, global_config):
         """
         load config from a dictionary, such as dataset path
         :param global_config: dictionary
         :return:
         """
-        data_config = global_config['data']
-        self._train_path = data_config['dataset']['train_path']
-        self._dev_path = data_config['dataset']['dev_path']
-        self._export_squad_path = data_config['dataset_h5']
-        self._glove_path = data_config['embedding_path']
+        self.data_config = global_config['data']
+        self._train_path = self.data_config['dataset']['train_path']
+        self._dev_path = self.data_config['dataset']['dev_path']
+        self._export_squad_path = self.data_config['dataset_h5']
+        self._glove_path = self.data_config['word_embedding_path']
+        self._kg_embeddings_vec_path = self.data_config['kg_embeddings_vec_path']
+        self._kg_patterns2id_path = self.data_config['kg_patterns2id_path']
 
         self.preprocess_config = global_config['preprocess']
         self._ignore_max_len = self.preprocess_config['ignore_max_len']
@@ -83,8 +96,10 @@ class PreprocessData:
         self._use_ent = self.preprocess_config['use_ent']
         self._use_em = self.preprocess_config['use_em']
         self._use_em_lemma = self.preprocess_config['use_em_lemma']
+        self._use_kg = self.preprocess_config['use_kg']
 
-        self._embedding_size = int(self.preprocess_config['word_embedding_size'])
+        self._word_embedding_size = int(self.preprocess_config['word_embedding_size'])
+        self._kg_embedding_size = int(self.preprocess_config['kg_embedding_size'])
 
     def _read_json(self, path):
         """
@@ -120,7 +135,7 @@ class PreprocessData:
             cur_context = question_grp['context']
             cur_qas = question_grp['qas']
 
-            cur_context_doc = DocText(self._nlp, cur_context, self.preprocess_config)
+            cur_context_doc = DocText(self.kg_processor, self._nlp, cur_context, self.preprocess_config)
             if training and len(cur_context_doc) > self._ignore_max_len:  # some context token len too large
                 continue
 
@@ -136,7 +151,7 @@ class PreprocessData:
                 if self._use_char:
                     self._update_to_char(cur_question)
 
-                cur_question_doc = DocText(self._nlp, cur_question, self.preprocess_config)
+                cur_question_doc = DocText(self.kg_processor, self._nlp, cur_question, self.preprocess_config)
                 cur_question_ids = self._doctext_to_id(cur_question_doc)
 
                 # get em feature
@@ -179,8 +194,8 @@ class PreprocessData:
                                      "\nAnswer:" + cur_ans_text)
                         continue
 
-                    cur_ans_range_ids[(idx * 2):(idx * 2 + 2)] = np.array([pos_s, pos_e])
-                answers_range_wid.append(np.array(cur_ans_range_ids))
+                    cur_ans_range_ids[(idx * 2):(idx * 2 + 2)] = [pos_s, pos_e]
+                answers_range_wid.append(cur_ans_range_ids)
 
                 cnt += 1
                 if cnt % 100 == 0:
@@ -228,7 +243,8 @@ class PreprocessData:
         :return: word ids
         """
 
-        sentence = {'token': [], 'pos': [], 'ent': [], 'right_space': doc_text.right_space}
+        sentence = {'token': [], 'pos': [], 'ent': [], 'right_space': doc_text.right_space, 'kg': [],
+                    'length': len(doc_text)}
 
         for i in range(len(doc_text)):
 
@@ -244,7 +260,7 @@ class PreprocessData:
                 else:
                     self._oov_num += 1
                     logger.debug('No.%d OOV word %s' % (self._oov_num, word))
-                    self._meta_data['id2vec'].append([0. for i in range(self._embedding_size)])
+                    self._meta_data['id2vec'].append([0. for i in range(self._word_embedding_size)])
             sentence['token'].append(self._word2id[word])
 
             # pos
@@ -253,6 +269,7 @@ class PreprocessData:
                 if pos not in self._pos2id:
                     self._pos2id[pos] = len(self._pos2id)
                     self._meta_data['id2pos'].append(pos)
+
                 sentence['pos'].append(self._pos2id[pos])
 
             # ent
@@ -262,6 +279,22 @@ class PreprocessData:
                     self._ent2id[ent] = len(self._ent2id)
                     self._meta_data['id2ent'].append(ent)
                 sentence['ent'].append(self._ent2id[ent])
+
+            if self._use_kg:
+                e = doc_text.kg[i]
+                if e not in self._kg2id:
+                    self._kg2id[e] = len(self._kg2id)
+                    self._meta_data['id2kg'].append(e)
+                    # whether OOV
+                    if e in self._kg2vec:
+                        self._meta_data['idkg2vec'].append(self._kg2vec[e])
+                    else:
+                        self._kg_num += 1
+                        logger.debug('No.%d OOV kg %s' % (self._kg_num, e))
+                        self._meta_data['idkg2vec'].append([0. for _ in range(self._kg_embedding_size)])
+
+                sentence['kg'].append(self._kg2id[e])
+
 
         return sentence
 
@@ -280,21 +313,63 @@ class PreprocessData:
         handle glove embeddings, restore embeddings with dictionary
         :return:
         """
-        logger.info("read glove from text file %s" % self._glove_path)
-        with zipfile.ZipFile(self._glove_path, 'r') as zf:
+        with open(self._glove_path, 'r') as f:
+            for line in f:
+                line_split = line.split(' ')
+                self._word2vec[line_split[0]] = np.asarray(line_split[1:], "float32")
 
-            glove_name = 'glove.6B.300d.txt'
+    def _handle_kg(self):
+        """
+        handle glove embeddings, restore embeddings with dictionary
+        :return:
+        """
+        with open(self._kg_embeddings_vec_path, 'r') as f:
+            for line in f:
+                line_split = line.split('\t')
+                self._kg2vec[line_split[0]] = np.asarray(line_split[1:], "float32")
+               
+    def save_processing(self):
 
-            word_num = 0
-            with zf.open(glove_name) as f:
-                for line in f:
-                    line_split = line.decode('utf-8').split(' ')
-                    self._word2vec[line_split[0]] = [float(x) for x in line_split[1:]]
+        # Create POS representation
+        if self.preprocess_config['use_pos']:
+            pos_vec = np.zeros((len(self._pos2id), len(self._pos2id) - 1,), dtype=np.float64)
+            for pos, idx in self._pos2id.items():
+                if idx == PreprocessData.padding_idx:
+                    continue
+                pos_vec[idx, idx -1] = 1
 
-                    word_num += 1
-                    if word_num % 10000 == 0:
-                        logger.info('handle word No.%d' % word_num)
+            self._meta_data['idpos2vec'] = pos_vec
 
+        # Save POS
+        with open(self.data_config['processed']['pos_embeddings_path'], 'wb') as output:
+            pickle.dump(self._meta_data['idpos2vec'], output, pickle.HIGHEST_PROTOCOL)
+
+        # Save WORD
+        with open("{}-{}.pickle".format(self.data_config['processed']['word_embeddings_path'],
+                                 self.preprocess_config['word_embedding_size']), 'wb') as output:
+            pickle.dump(self._meta_data['id2vec'], output, pickle.HIGHEST_PROTOCOL)
+
+        # Save KG
+        with open("{}-{}.pickle".format(self.data_config['processed']['kg_embeddings_path'],
+                  self.preprocess_config['word_embedding_size']), 'wb') as output:
+            pickle.dump(self._meta_data['idkg2vec'], output, pickle.HIGHEST_PROTOCOL)
+
+        # Save META
+        with open(self.data_config['processed']['meta_path'], 'wb') as output:
+            pickle.dump({'id2word': self._meta_data['id2word'],
+                           'id2char': self._meta_data['id2char'],
+                           'id2pos': self._meta_data['id2pos'],
+                           'id2ent': self._meta_data['id2ent'],
+                           'id2kg': self._meta_data['id2kg']}, output, pickle.HIGHEST_PROTOCOL)
+
+        # Save DATA
+        with open(self.data_config['processed']['dataset_path'], 'wb') as output:
+            pickle.dump(self._data, output, pickle.HIGHEST_PROTOCOL)
+
+    def save_pickle_object(self, filename):
+        with open(filename, 'wb') as output:  # Overwrites any existing file.
+            pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
+            
     def _export_squad_hdf5(self):
         """
         export squad dataset to hdf5 file
@@ -334,7 +409,6 @@ class PreprocessData:
                         data = sub_grp.create_dataset(subsub_key, subsub_value.shape, dtype=cur_dtype,
                                                       **self._compress_option)
                         data[...] = subsub_value
-
                 else:
                     cur_dtype = str_dt if sub_value.dtype.type is np.str_ else sub_value.dtype
                     data = data_grp.create_dataset(sub_key, sub_value.shape, dtype=cur_dtype,
@@ -366,7 +440,7 @@ class PreprocessData:
         self._attr['char_dict_size'] = len(self._char2id)
         self._attr['pos_dict_size'] = len(self._pos2id)
         self._attr['ent_dict_size'] = len(self._ent2id)
-        self._attr['embedding_size'] = self._embedding_size
+        self._attr['embedding_size'] = self._word_embedding_size
         self._attr['oov_word_num'] = self._oov_num
 
         logger.info('padding id vectors...')
@@ -385,10 +459,7 @@ class PreprocessData:
                                           value=self.answer_padding_idx),
             'samples_id': np.array(dev_cache_nopad['samples_id'])
         }
-
-        logger.info('export to hdf5 file...')
-        self._export_squad_hdf5()
-
+        self.save_processing()
         logger.info('finished.')
 
 
@@ -398,7 +469,7 @@ def dict2array(data_doc):
     :param data_doc: [{'token': [], 'pos': [], 'ent': [], 'em': [], 'em_lemma': [], 'right_space': []]
     :return:
     """
-    data = {'token': [], 'pos': [], 'ent': [], 'em': [], 'em_lemma': [], 'right_space': []}
+    data = {'token': [], 'pos': [], 'ent': [], 'em': [], 'em_lemma': [], 'right_space': [], 'kg': [], 'length': []}
     max_len = 0
 
     for ele in data_doc:
@@ -408,11 +479,15 @@ def dict2array(data_doc):
             max_len = len(ele['token'])
 
         for k in ele.keys():
-            if len(ele[k]) > 0:
-                data[k].append(np.array(ele[k]))
+            if k == 'length':
+                data[k].append(ele[k])
+
+            elif len(ele[k]) > 0:
+                data[k].append(ele[k])
+
 
     for k in data.keys():
-        if len(data[k]) > 0:
+        if len(data[k]) > 0 and k != 'length':
             data[k] = pad_sequences(data[k],
                                     maxlen=max_len,
                                     padding='post',

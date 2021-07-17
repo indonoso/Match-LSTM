@@ -29,7 +29,7 @@ class MatchLSTM(torch.nn.Module):
     """
 
     def __init__(self, hidden_size=150, dropout_p=0.04, emb_dropout_p=0.1, enable_layer_norm=False, hidden_mode='LSTM',
-                 word_embedding_size=300, encoder_bidirection=True, match_lstm_bidirection=True, prt_bidirection=True):
+                 embedding_size=300, encoder_bidirection=True, match_lstm_bidirection=True, ptr_bidirection=True):
         super(MatchLSTM, self).__init__()
 
         encoder_direction_num = 2 if encoder_bidirection else 1
@@ -39,7 +39,7 @@ class MatchLSTM(torch.nn.Module):
         self.enable_search = True
 
         self.encoder = MyRNNBase(mode=hidden_mode,
-                                 input_size=word_embedding_size,
+                                 input_size=embedding_size,
                                  hidden_size=hidden_size,
                                  bidirectional=encoder_bidirection,
                                  dropout_p=emb_dropout_p)
@@ -62,7 +62,7 @@ class MatchLSTM(torch.nn.Module):
                                            dropout_p=dropout_p,
                                            enable_layer_norm=enable_layer_norm)
 
-    def forward(self, context_vec, context_lengths, question_vec, question_lengths, context_char=None, question_char=None, context_f=None, question_f=None):
+    def forward(self, context_vec, context_lengths, question_vec, question_lengths):
         """
         context_char and question_char not used
         """
