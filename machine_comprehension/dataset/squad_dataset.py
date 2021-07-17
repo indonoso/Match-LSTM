@@ -99,7 +99,7 @@ class SquadDataset:
         data = self._data[type]
         dataset = CQA_Dataset(data['context'],
                               data['question'],
-                              data['answer_range'],
+                              np.array(data['answer_range']),
                               self.meta_data,
                               self.global_config['preprocess'])
         if shuffle:

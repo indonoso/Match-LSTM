@@ -351,7 +351,7 @@ class PreprocessData:
 
         # Save KG
         with open("{}-{}.pickle".format(self.data_config['processed']['kg_embeddings_path'],
-                  self.preprocess_config['word_embedding_size']), 'wb') as output:
+                  self.preprocess_config['kg_embedding_size']), 'wb') as output:
             pickle.dump(self._meta_data['idkg2vec'], output, pickle.HIGHEST_PROTOCOL)
 
         # Save META
