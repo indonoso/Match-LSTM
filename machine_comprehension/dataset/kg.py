@@ -1,9 +1,12 @@
 from .utils import aho_create_statemachine, aho_find_all
+import json
 
 
 class KGEmbeddings:
-    def __init__(self, patterns2id):
-        self.patterns2id = patterns2id
+    def __init__(self, patterns2id_path):
+        with open(patterns2id_path) as f:
+            self.patterns2id = json.load(f)
+
         self.forest = aho_create_statemachine(self.patterns2id.keys())
         self.len_patterns = {p: len(p.split(' ')) for p in self.patterns2id.leys()}
 

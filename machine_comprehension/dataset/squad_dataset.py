@@ -6,7 +6,6 @@ __author__ = 'han'
 import os
 import h5py
 import math
-import torch
 import torch.utils.data
 from torch.utils.data.sampler import Sampler, SequentialSampler
 import logging
@@ -407,12 +406,18 @@ class CQA_Dataset(torch.utils.data.Dataset):
         self.lengths = self.get_lengths()
 
     def __getitem__(self, index):
-        cur_context = to_long_tensor(self.context['token'][index])
-        cur_question = to_long_tensor(self.question['token'][index])
-        cur_answer = to_long_tensor(self.answer_range[index])
+        word_context = to_long_tensor(self.context['token'][index])
+        word_question = to_long_tensor(self.question['token'][index])
 
-        cur_context_f, cur_question_f = self.addition_feature(index)
-        return cur_context, cur_question, cur_context_f, cur_question_f, cur_answer
+        kg_context = to_long_tensor(self.context['kg'][index])
+        kg_question = to_long_tensor(self.question['kg'][index])
+
+        pos_context = to_long_tensor(self.context['pos'][index])
+        pos_question = to_long_tensor(self.question['pos'][index])
+
+        answer = to_long_tensor(self.answer_range[index])
+
+        return word_context, word_question, kg_context, kg_question, pos_context, pos_question, answer
 
     def __len__(self):
         return self.answer_range.shape[0]
