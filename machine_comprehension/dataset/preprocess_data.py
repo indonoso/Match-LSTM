@@ -80,13 +80,13 @@ class PreprocessData:
         :param global_config: dictionary
         :return:
         """
-        data_config = global_config['data']
-        self._train_path = data_config['dataset']['train_path']
-        self._dev_path = data_config['dataset']['dev_path']
-        self._export_squad_path = data_config['dataset_h5']
-        self._glove_path = data_config['embedding_path']
-        self._kg_embeddings_vec_path = data_config['kg_embeddings_vec_path']
-        self._kg_patterns2id_path = data_config['kg_patterns2id_path']
+        self.data_config = global_config['data']
+        self._train_path = self.data_config['dataset']['train_path']
+        self._dev_path = self.data_config['dataset']['dev_path']
+        self._export_squad_path = self.data_config['dataset_h5']
+        self._glove_path = self.data_config['word_embedding_path']
+        self._kg_embeddings_vec_path = self.data_config['kg_embeddings_vec_path']
+        self._kg_patterns2id_path = self.data_config['kg_patterns2id_path']
 
         self.preprocess_config = global_config['preprocess']
         self._ignore_max_len = self.preprocess_config['ignore_max_len']
@@ -336,6 +336,33 @@ class PreprocessData:
                 line_split = line.split('\t')
                 self._kg2vec[line_split[0]] = np.asarray(line_split[1:], "float32")
                
+    def save_processing(self):
+        # Save POS
+        with open(self.data_config['processed']['pos_embeddings_path'], 'wb') as output:
+            pickle.dump(self._meta_data['idpos2vec'], output, pickle.HIGHEST_PROTOCOL)
+
+        # Save WORD
+        with open("{}-{}.pickle".format(self.data_config['processed']['word_embeddings_path'],
+                                 self.preprocess_config['word_embedding_size']), 'wb') as output:
+            pickle.dump(self._meta_data['id2vec'], output, pickle.HIGHEST_PROTOCOL)
+
+        # Save KG
+        with open("{}-{}.pickle".format(self.data_config['processed']['kg_embeddings_path'],
+                  self.preprocess_config['word_embedding_size']), 'wb') as output:
+            pickle.dump(self._meta_data['idkg2vec'], output, pickle.HIGHEST_PROTOCOL)
+
+        # Save META
+        with open(self.data_config['processed']['meta_path'], 'wb') as output:
+            pickle.dump({'id2word': self._meta_data['id2word'],
+                           'id2char': self._meta_data['id2char'],
+                           'id2pos': self._meta_data['id2pos'],
+                           'id2ent': self._meta_data['id2ent'],
+                           'id2kg': self._meta_data['id2wkg']}, output, pickle.HIGHEST_PROTOCOL)
+
+        # Save DATA
+        with open(self.data_config['processed']['dataset_path'], 'wb') as output:
+            pickle.dump(self._data, output, pickle.HIGHEST_PROTOCOL)
+
     def save_pickle_object(self, filename):
         with open(filename, 'wb') as output:  # Overwrites any existing file.
             pickle.dump(self, output, pickle.HIGHEST_PROTOCOL)
@@ -429,7 +456,7 @@ class PreprocessData:
                                           value=self.answer_padding_idx),
             'samples_id': np.array(dev_cache_nopad['samples_id'])
         }
-
+        self.save_processing()
         logger.info('finished.')
 
 
