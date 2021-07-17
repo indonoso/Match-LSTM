@@ -388,8 +388,8 @@ class MyRNNBase(torch.nn.Module):
         _, idx_unsort = torch.sort(idx_sort, dim=0)
 
         v_sort = v.index_select(1, idx_sort)
-        lengths_sort.cpu()
-        v_pack = torch.nn.utils.rnn.pack_padded_sequence(v_sort, lengths_sort)
+
+        v_pack = torch.nn.utils.rnn.pack_padded_sequence(v_sort, lengths=lengths_sort.cpu())
         v_dropout = self.dropout.forward(v_pack.data)
         v_pack_dropout = torch.nn.utils.rnn.PackedSequence(v_dropout, v_pack.batch_sizes)
 
