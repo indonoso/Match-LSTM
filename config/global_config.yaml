@@ -33,6 +33,7 @@ preprocess:
   use_pos: True
   use_ent: False
   use_em: False
+  use_kg: True
   use_em_lemma: False
 
 train:

@@ -50,3 +50,4 @@ def aho_find_all(s, root):
         node = node.goto[s[i]]
         for pattern in node.out:
             positions.append((i, pattern))
+    return positions

@@ -7,8 +7,8 @@ class KGEmbeddings:
         with open(patterns2id_path) as f:
             self.patterns2id = json.load(f)
 
-        self.forest = aho_create_statemachine(self.patterns2id.keys())
-        self.len_patterns = {p: len(p.split(' ')) for p in self.patterns2id.leys()}
+        self.forest = aho_create_statemachine(sorted(self.patterns2id.keys()))
+        self.len_patterns = {p: len(p.split(' ')) for p in self.patterns2id.keys()}
 
     def process(self, text):
         positions = aho_find_all(text.split(' '), self.forest)

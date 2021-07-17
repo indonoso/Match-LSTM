@@ -51,6 +51,7 @@ class PreprocessData:
         self._word2vec = {self.padding: [0. for _ in range(self._word_embedding_size)]}
         self._kg2vec = {self.padding: [0. for _ in range(self._kg_embedding_size)]}
         self._oov_num = 0
+        self._kg_num = 0
 
         # data need to store in hdf5 file
         self._meta_data = {'id2vec': [[0. for _ in range(self._word_embedding_size)]],
@@ -206,7 +207,7 @@ class PreprocessData:
             for pos, idx in self._pos2id.items():
                 if idx == PreprocessData.padding_idx:
                     continue
-                pos_vec[idx, idx - 1] = 1
+                pos_vec[idx - 1, idx] = 1
 
             self._meta_data['idpos2vec'] = pos_vec
 
@@ -294,13 +295,13 @@ class PreprocessData:
                 if e not in self._kg2id:
                     self._kg2id[e] = len(self._kg2id)
                     self._meta_data['id2kg'].append(e)
-                # whether OOV
-                if e in self._kg2vec:
-                    self._meta_data['idkg2vec'].append(self._kg2vec[e])
-                else:
-                    self._oov_num += 1
-                    logger.debug('No.%d OOV kg %s' % (self._oov_num, e))
-                    self._meta_data['idkg2vec'].append([0. for _ in range(self._kg_embedding_size)])
+                    # whether OOV
+                    if e in self._kg2vec:
+                        self._meta_data['idkg2vec'].append(self._kg2vec[e])
+                    else:
+                        self._kg_num += 1
+                        logger.debug('No.%d OOV kg %s' % (self._kg_num, e))
+                        self._meta_data['idkg2vec'].append([0. for _ in range(self._kg_embedding_size)])
 
                 sentence['kg'].append(self._kg2id[e])
 
@@ -358,7 +359,7 @@ class PreprocessData:
                            'id2char': self._meta_data['id2char'],
                            'id2pos': self._meta_data['id2pos'],
                            'id2ent': self._meta_data['id2ent'],
-                           'id2kg': self._meta_data['id2wkg']}, output, pickle.HIGHEST_PROTOCOL)
+                           'id2kg': self._meta_data['id2kg']}, output, pickle.HIGHEST_PROTOCOL)
 
         # Save DATA
         with open(self.data_config['processed']['dataset_path'], 'wb') as output:
@@ -477,8 +478,12 @@ def dict2array(data_doc):
             max_len = len(ele['token'])
 
         for k in ele.keys():
-            if len(ele[k]) > 0:
+            if k == 'length':
                 data[k].append(ele[k])
+
+            elif len(ele[k]) > 0:
+                data[k].append(ele[k])
+
 
     for k in data.keys():
         if len(data[k]) > 0 and k != 'length':
