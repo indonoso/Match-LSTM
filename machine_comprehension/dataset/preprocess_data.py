@@ -252,7 +252,8 @@ class PreprocessData:
         :return: word ids
         """
 
-        sentence = {'token': [], 'pos': [], 'ent': [], 'right_space': doc_text.right_space, 'kg': []}
+        sentence = {'token': [], 'pos': [], 'ent': [], 'right_space': doc_text.right_space, 'kg': [],
+                    'length': len(doc_text)}
 
         for i in range(len(doc_text)):
 
@@ -466,7 +467,7 @@ def dict2array(data_doc):
     :param data_doc: [{'token': [], 'pos': [], 'ent': [], 'em': [], 'em_lemma': [], 'right_space': []]
     :return:
     """
-    data = {'token': [], 'pos': [], 'ent': [], 'em': [], 'em_lemma': [], 'right_space': []}
+    data = {'token': [], 'pos': [], 'ent': [], 'em': [], 'em_lemma': [], 'right_space': [], 'kg': [], 'length': []}
     max_len = 0
 
     for ele in data_doc:
@@ -480,7 +481,7 @@ def dict2array(data_doc):
                 data[k].append(ele[k])
 
     for k in data.keys():
-        if len(data[k]) > 0:
+        if len(data[k]) > 0 and k != 'length':
             data[k] = pad_sequences(data[k],
                                     maxlen=max_len,
                                     padding='post',

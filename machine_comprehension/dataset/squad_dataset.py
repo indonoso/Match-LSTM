@@ -412,6 +412,9 @@ class CQA_Dataset(torch.utils.data.Dataset):
         self.lengths = self.get_lengths()
 
     def __getitem__(self, index):
+        len_context = self.context['length'][index]
+        len_question = self.question['length'][index]
+
         word_context = to_long_tensor(self.context['token'][index])
         word_question = to_long_tensor(self.question['token'][index])
 
@@ -423,7 +426,7 @@ class CQA_Dataset(torch.utils.data.Dataset):
 
         answer = to_long_tensor(self.answer_range[index])
 
-        return word_context, word_question, kg_context, kg_question, pos_context, pos_question, answer
+        return word_context, word_question, kg_context, kg_question, pos_context, pos_question, len_context, len_question, answer
 
     def __len__(self):
         return self.answer_range.shape[0]
