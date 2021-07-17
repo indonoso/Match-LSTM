@@ -34,7 +34,7 @@ class PreprocessData:
         self._train_path = ''
         self._export_squad_path = ''
         self._glove_path = ''
-        self._embedding_size = 300
+        self._word_embedding_size = 300
         self._kg_embedding_size = 100
         self._ignore_max_len = 10000
         self._load_config(global_config)
@@ -48,18 +48,19 @@ class PreprocessData:
         self._pos2id = {self.padding: 0}
         self._ent2id = {self.padding: 0}
         self._kg2id = {self.padding: 0}
-        self._word2vec = {self.padding: [0. for _ in range(self._embedding_size)]}
-        self._kg2vec = {self.padding: [0. for _ in range(self._embedding_size)]}
+        self._word2vec = {self.padding: [0. for _ in range(self._word_embedding_size)]}
+        self._kg2vec = {self.padding: [0. for _ in range(self._kg_embedding_size)]}
         self._oov_num = 0
 
         # data need to store in hdf5 file
-        self._meta_data = {'id2vec': [[0. for _ in range(self._embedding_size)]],
+        self._meta_data = {'id2vec': [[0. for _ in range(self._word_embedding_size)]],
                            'id2word': [self.padding],
                            'id2char': [self.padding, '`'],
                            'id2pos': [self.padding],
                            'id2ent': [self.padding],
                            'id2kg': [self.padding],
-                           'idkg2vec': [[0. for _ in range(self._embedding_size)]],
+                           'idkg2vec': [[0. for _ in range(self._kg_embedding_size)]],
+                           'idpos2vec': None,
                            }
         self._data = {}
         self._attr = {}
@@ -96,7 +97,7 @@ class PreprocessData:
         self._use_em_lemma = self.preprocess_config['use_em_lemma']
         self._use_kg = self.preprocess_config['use_kg']
 
-        self._embedding_size = int(self.preprocess_config['word_embedding_size'])
+        self._word_embedding_size = int(self.preprocess_config['word_embedding_size'])
         self._kg_embedding_size = int(self.preprocess_config['kg_embedding_size'])
 
     def _read_json(self, path):
@@ -257,7 +258,7 @@ class PreprocessData:
                 else:
                     self._oov_num += 1
                     logger.debug('No.%d OOV word %s' % (self._oov_num, word))
-                    self._meta_data['id2vec'].append([0. for i in range(self._embedding_size)])
+                    self._meta_data['id2vec'].append([0. for i in range(self._word_embedding_size)])
             sentence['token'].append(self._word2id[word])
 
             # pos
@@ -266,6 +267,7 @@ class PreprocessData:
                 if pos not in self._pos2id:
                     self._pos2id[pos] = len(self._pos2id)
                     self._meta_data['id2pos'].append(pos)
+
                 sentence['pos'].append(self._pos2id[pos])
 
             # ent
@@ -398,7 +400,7 @@ class PreprocessData:
         self._attr['char_dict_size'] = len(self._char2id)
         self._attr['pos_dict_size'] = len(self._pos2id)
         self._attr['ent_dict_size'] = len(self._ent2id)
-        self._attr['embedding_size'] = self._embedding_size
+        self._attr['embedding_size'] = self._word_embedding_size
         self._attr['oov_word_num'] = self._oov_num
 
         logger.info('padding id vectors...')
