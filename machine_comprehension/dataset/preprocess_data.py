@@ -427,7 +427,7 @@ class PreprocessData:
         """
         logger.info('handle glove file...')
         self._handle_glove()
-
+        self._handle_kg()
         logger.info('read squad json...')
         train_context_qas = self._read_json(self._train_path)
         dev_context_qas = self._read_json(self._dev_path)
