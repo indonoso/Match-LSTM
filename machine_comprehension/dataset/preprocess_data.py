@@ -265,14 +265,12 @@ class PreprocessData:
                     self._meta_data['id2vec'].append([0. for i in range(self._word_embedding_size)])
             sentence['token'].append(self._word2id[word])
 
-            # pos
-            if self._use_pos:
-                pos = doc_text.pos[i]
-                if pos not in self._pos2id:
-                    self._pos2id[pos] = len(self._pos2id)
-                    self._meta_data['id2pos'].append(pos)
+            pos = doc_text.pos[i]
+            if pos not in self._pos2id:
+                self._pos2id[pos] = len(self._pos2id)
+                self._meta_data['id2pos'].append(pos)
 
-                sentence['pos'].append(self._pos2id[pos])
+            sentence['pos'].append(self._pos2id[pos])
 
             # ent
             if self._use_ent:
@@ -282,20 +280,19 @@ class PreprocessData:
                     self._meta_data['id2ent'].append(ent)
                 sentence['ent'].append(self._ent2id[ent])
 
-            if self._use_kg:
-                e = doc_text.kg[i]
-                if e not in self._kg2id:
-                    self._kg2id[e] = len(self._kg2id)
-                    self._meta_data['id2kg'].append(e)
-                    # whether OOV
-                    if e in self._kg2vec:
-                        self._meta_data['idkg2vec'].append(self._kg2vec[e])
-                    else:
-                        self._kg_num += 1
-                        logger.debug('No.%d OOV kg %s' % (self._kg_num, e))
-                        self._meta_data['idkg2vec'].append([0. for _ in range(self._kg_embedding_size)])
+            e = doc_text.kg[i]
+            if e not in self._kg2id:
+                self._kg2id[e] = len(self._kg2id)
+                self._meta_data['id2kg'].append(e)
+                # whether OOV
+                if e in self._kg2vec:
+                    self._meta_data['idkg2vec'].append(self._kg2vec[e])
+                else:
+                    self._kg_num += 1
+                    logger.debug('No.%d OOV kg %s' % (self._kg_num, e))
+                    self._meta_data['idkg2vec'].append([0. for _ in range(self._kg_embedding_size)])
 
-                sentence['kg'].append(self._kg2id[e])
+            sentence['kg'].append(self._kg2id[e])
 
 
         return sentence
